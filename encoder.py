@@ -1,14 +1,74 @@
 from bitarray import bitarray
+import binascii
 
 
 def encodeToBits(source, destination, message):
+    #    print("from: " + str(source) + ", to: " + str(destination) + ":" + message + ";")
     msg = bitarray()
-    msg.extend(getBitarrayFromInt(destination, 6))
-    msg.extend(getBitarrayFromInt(source, 6))
-    msg.extend(getBitarrayFromInt(len(message), 2))
-    msg.extend(getBitarrayFromString(message))
+    bDest = getBitarrayFromInt(destination, 6)
+    bSrc = getBitarrayFromInt(source, 6)
+    bLen = getBitarrayFromInt(len(message), 2)
+    bMsg = getBitarrayFromString(message)
+
+    #    print("from: " + str(bSrc))
+    #    print("to: " + str(bDest))
+    #    print("len: " + str(bLen))
+    #    print("msg: " + str(bMsg))
+
+    msg.extend(bDest)
+    msg.extend(bSrc)
+    msg.extend(bLen)
+    msg.extend(bMsg)
+
+    msg.extend(getBitarrayFromInt(binascii.crc32(msg.tobytes()), 4))
 
     return msg
+
+
+def decodeFromBits(message):
+
+    if (len(message) < 16 * 8):
+        return None
+
+    sDest = message[:6 * 8]
+    sSrc = message[6 * 8:12 * 8]
+    sLen = message[12 * 8:14 * 8]
+    sMsg = message[14 * 8:-4 * 8]
+    sCrc = message[-4 * 8:]
+
+    sContent = sDest + sSrc + sLen + sMsg
+    content = bitarray()
+    for c in sContent:
+        if (c == '0'):
+            content.append(False)
+        else:
+            content.append(True)
+
+    contentCrc = binascii.crc32(content.tobytes())
+    messageCrc = int(sCrc, 2)
+
+    if (contentCrc != messageCrc):
+        #        print("crc dont match")
+        return None
+
+    dest = int(sDest, 2)
+    src = int(sSrc, 2)
+    length = int(sLen, 2)
+
+    if (length * 8 != len(sMsg)):
+        print("length is incorrect")
+        return None
+
+    bMsg = bitarray()
+    for c in sMsg:
+        if (c == '0'):
+            bMsg.append(False)
+        else:
+            bMsg.append(True)
+
+    msg = bMsg.tobytes().decode()
+
+    return ({"dest": dest, "src": src, "msg": msg})
 
 
 def getBitarrayFromInt(data, length):
@@ -83,3 +143,16 @@ fourBfiveB = {
 
 def encode(source, destination, data):
     return encodeToMessage(encodeToBits(source, destination, data))
+
+
+import sys
+
+for line in sys.stdin:
+    line = line[:-1]
+    s = line.split(" ", 3)
+    if (s[0] == "E"):
+        print(encodeToBits(int(s[1]), int(s[2]), s[3]).to01())
+    else:
+        decoded = decodeFromBits(s[1])
+        if(decoded != None) :
+            print(str(decoded["src"]) +" " + str(decoded["dest"])+" "+decoded["msg"])
