@@ -20,7 +20,7 @@ def encodeToBits(source, destination, message):
     msg.extend(bLen)
     msg.extend(bMsg)
 
-    msg.extend(getBitarrayFromInt(binascii.crc32(msg.tobytes()), 4))
+    msg.extend(getBitarrayFromInt(abs(getCrc(msg.tobytes())), 4))
 
     return msg
 
@@ -44,7 +44,7 @@ def decodeFromBits(message):
         else:
             content.append(True)
 
-    contentCrc = binascii.crc32(content.tobytes())
+    contentCrc = getCrc(content.tobytes())
     messageCrc = int(sCrc, 2)
 
     if (contentCrc != messageCrc):
@@ -72,6 +72,8 @@ def decodeFromBits(message):
 
 
 def getBitarrayFromInt(data, length):
+    #    print(data)
+#    print(bin(data)[2:].zfill(8*length))
     return bitarray(bin(data)[2:].zfill(8 * length))
 
 
@@ -122,23 +124,26 @@ def convertByteToBitarray(data, lastbit):
 
 
 fourBfiveB = {
-    '0000': '11110',
-    '0001': '01001',
-    '0010': '10100',
-    '0011': '10101',
-    '0100': '01010',
-    '0101': '01011',
-    '0110': '01110',
-    '0111': '01111',
-    '1000': '10010',
-    '1001': '10011',
-    '1010': '10110',
-    '1011': '10111',
-    '1100': '11010',
-    '1101': '11011',
-    '1110': '11100',
-    '1111': '11101'
-}
+        '0000': '11110',
+        '0001': '01001',
+        '0010': '10100',
+        '0011': '10101',
+        '0100': '01010',
+        '0101': '01011',
+        '0110': '01110',
+        '0111': '01111',
+        '1000': '10010',
+        '1001': '10011',
+        '1010': '10110',
+        '1011': '10111',
+        '1100': '11010',
+        '1101': '11011',
+        '1110': '11100',
+        '1111': '11101'
+        }
+
+def getCrc( data ):
+    return binascii.crc32(data) & 0xffffffff
 
 
 def encode(source, destination, data):
