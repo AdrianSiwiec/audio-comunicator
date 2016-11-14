@@ -72,8 +72,6 @@ def decodeFromBits(message):
 
 
 def getBitarrayFromInt(data, length):
-    #    print(data)
-#    print(bin(data)[2:].zfill(8*length))
     return bitarray(bin(data)[2:].zfill(8 * length))
 
 
@@ -92,14 +90,56 @@ def encodeToMessage(data):
     msg.extend(bitarray("10101011"))
     lastbit = True
 
+    data = apply4b5b(data)
+
+    data = nrzi(data, lastbit)
+
+    msg.extend(data)
+
+    return msg
+
+
+def decodeFromMessage(data):
+    if (data < 65):
+        return None
+    data = data[64:]
+
+    msg = bitarray()
+    for i in data:
+        msg.append(i == '1')
+
+    data = msg
+
+    data = reverseNrzi(data, True)
+
+    data = reverse4b5b(data)
+
+    return data
+
+
+def apply4b5b(data):
+    msg = bitarray()
     for b in data.tobytes():
-        (ext, lastbit) = convertByteToBitarray(b, lastbit)
+        ext = convertByteToBitarray(ord(b))
         msg.extend(ext)
 
     return msg
 
 
-def convertByteToBitarray(data, lastbit):
+def reverse4b5b(data):
+    msg = bitarray()
+    data = data.to01()
+    for s in [data[i:i + 5] for i in range(0, len(data), 5)]:
+        ext = rev4B5B.get(s)
+        if( ext != None ):
+            msg.extend(rev4B5B.get(s))
+        else:
+            return None
+
+    return msg
+
+
+def convertByteToBitarray(data):
     arr = getBitarrayFromInt(data, 1)
     ret = bitarray()
 
@@ -112,15 +152,27 @@ def convertByteToBitarray(data, lastbit):
     ret.extend(b1)
     ret.extend(b2)
 
-    for i in range(8):
-        now = ret[i]
-        if (now == lastbit):
-            ret[i] = False
-        else:
-            ret[i] = True
-        lastbit = now
+    return ret
 
-    return (ret, lastbit)
+
+def nrzi(data, lastbit):
+    for i in range(data.length()):
+        if (data[i]):
+            data[i] = not lastbit
+        else:
+            data[i] = lastbit
+        lastbit = data[i]
+
+    return data
+
+
+def reverseNrzi(data, lastbit):
+    for i in range(data.length()):
+        nju = data[i]
+        data[i] = not (data[i] == lastbit)
+        lastbit = nju
+
+    return data
 
 
 fourBfiveB = {
@@ -142,22 +194,49 @@ fourBfiveB = {
         '1111': '11101'
         }
 
-def getCrc( data ):
+rev4B5B = {
+        '11110':'0000',
+        '01001':'0001',
+        '10100':'0010',
+        '10101':'0011',
+        '01010':'0100',
+        '01011':'0101',
+        '01110':'0110',
+        '01111':'0111',
+        '10010':'1000',
+        '10011':'1001',
+        '10110':'1010',
+        '10111':'1011',
+        '11010':'1100',
+        '11011':'1101',
+        '11100':'1110',
+        '11101':'1111'
+        }
+
+
+def getCrc(data):
     return binascii.crc32(data) & 0xffffffff
 
 
 def encode(source, destination, data):
     return encodeToMessage(encodeToBits(source, destination, data))
 
+def decode(data):
+    data = decodeFromMessage(data)
+    if( data == None ):
+        return None
+    return decodeFromBits(data.to01())
+
 
 import sys
 
-for line in sys.stdin:
+for line in sys.stdin.readlines():
     line = line[:-1]
     s = line.split(" ", 3)
     if (s[0] == "E"):
-        print(encodeToBits(int(s[1]), int(s[2]), s[3]).to01())
+        print(encode(int(s[1]), int(s[2]), s[3]).to01())
     else:
-        decoded = decodeFromBits(s[1])
-        if(decoded != None) :
-            print(str(decoded["src"]) +" " + str(decoded["dest"])+" "+decoded["msg"])
+        if( len(s) > 1 ):
+            decoded = decode(s[1])
+            if (decoded != None):
+                print(str(decoded["src"]) + " " + str(decoded["dest"]) + " " + decoded["msg"])
