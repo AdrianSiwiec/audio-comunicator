@@ -131,7 +131,7 @@ class WaveConnection(SimpleConnection):
     def read_raw(self, size):
         if self.connection is None:
             raise IOError("Closed connection")
-        data = self.connection.readframes(size/self.sample_width)
+        data = self.connection.readframes(size)
         return bytes(bytearray(data))
 
     def write_raw(self, data):

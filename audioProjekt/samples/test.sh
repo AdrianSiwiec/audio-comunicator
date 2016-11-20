@@ -10,7 +10,7 @@ for i in *_*_*_*.wav; do
     echo __PULSEAUDIO_WAVFILE__="$i" python ./recv.py "$t" "$f0" "$f1"
     echo "-----------------------------------------------------------------------------"
     echo  Result:
-    __PULSEAUDIO_WAVFILE__="$i" python ./recv.py "$t" "$f0" "$f1"
+    __PULSEAUDIO_WAVFILE__="$i" python ../recv.py "$t" "$f0" "$f1"
     echo ""
     echo "-----------------------------------------------------------------------------"
 done
