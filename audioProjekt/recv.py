@@ -4,7 +4,7 @@ import numpy
 
 from bitarray import bitarray
 
-_debug = True
+_debug = False
 
 
 def receive(f0, f1, bitsPerSecond):
