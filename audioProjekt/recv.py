@@ -1,17 +1,17 @@
-from encoder import decodeInt, decodeMsg
+from encoder import decodeInt, decodeMsg, decodeFromBitarray
 import pulseaudio as pa
 import numpy
 
 from bitarray import bitarray
 
-_debug = False
+_debug = True
 
 
 def receive(f0, f1, bitsPerSecond):
     if _debug:
         print("Receiving: freq0 = " + str(f0) + ", freq1 = " + str(f1) + ", bitsPerSecond = " + str(bitsPerSecond))
-    precision = 6
-    noiseRatio = 8
+    precision = 6  #should be even, or change isMatch
+    noiseRatio = 2
     guesses = [0] * precision
     ratio = [0] * precision
 
@@ -61,29 +61,40 @@ def receive(f0, f1, bitsPerSecond):
 
         if _debug: print("I hereby inform you that preamble has finished")
 
+        wholeMessage = bitarray()
+
         to = listenForBytes(6, samplesPerBit, f0, f1, recorder)
+        wholeMessage.extend(to)
         lastbitTo = to[-1]
         to = decodeInt(to, True)
         print("TO: " + str(to))
 
         frm = listenForBytes(6, samplesPerBit, f0, f1, recorder)
+        wholeMessage.extend(frm)
         lastbitFrom = frm[-1]
         frm = decodeInt(frm, lastbitTo)
         print("FROM: " + str(frm))
 
         ln = listenForBytes(2, samplesPerBit, f0, f1, recorder)
+        wholeMessage.extend(ln)
         lastbitLn = ln[-1]
         ln = decodeInt(ln, lastbitFrom)
         print("LEN: " + str(ln))
 
         msg = listenForBytes(ln, samplesPerBit, f0, f1, recorder)
+        wholeMessage.extend(msg)
         lastbitMsg = msg[-1]
         msg = decodeMsg(msg, lastbitLn)
         print("MSG: " + msg)
 
-        crc = listenForBytes(3, samplesPerBit, f0, f1, recorder)
-        crc = decodeInt(crc, lastbitMsg)
-        #checkCrc()
+        crc = listenForBytes(4, samplesPerBit, f0, f1, recorder)
+        wholeMessage.extend(crc)
+
+        decodedMessage = decodeFromBitarray(wholeMessage)
+        if(decodeMsg == None):
+            print("Message Corrupted!")
+        else:
+            print("CRC OK")
 
 
 def listenForBytes(ln, samplesPerBit, f0, f1, recorder):
@@ -117,11 +128,6 @@ def sense(samplesPerBit, noiseRatio, recorder, _debug):
     count = 0
     samples = recorder.read(samplesPerBit)
 
-    #if _debug: print(str(samplesPerBit) + ":" + str(len(samples)))
-#    if samplesPerBit != len(samples):
-#        print("THERE IS SOMETHING WRONG HERE, BRIAN. It listens for too many samples. Damn it! Wanted: " + str(
-#            samplesPerBit) + ", got: " + str(len(samples)))
-
     trans = numpy.fft.fft(samples)
     trans = trans[:len(trans) / 2]
 
@@ -141,7 +147,7 @@ def sense(samplesPerBit, noiseRatio, recorder, _debug):
         if abs(trans[i]) > abs(trans[ans]):
             ans = i
 
-    #if _debug: print("Noise Ratio: " + str(max(f0, f1) / fNoise) + " Max: " + str(ans))
+    if _debug: print("Noise Ratio: " + str(max(f0, f1) / fNoise) + " Max: " + str(ans))
 
     if (max(f0, f1) / fNoise < noiseRatio):
         return (0, 0)
@@ -173,8 +179,3 @@ bitsPerSecond = int(sys.argv[1])
 freq0 = int(sys.argv[2]) / bitsPerSecond
 freq1 = int(sys.argv[3]) / bitsPerSecond
 receive(freq0, freq1, bitsPerSecond)
-
-#(nchannels, sampwidth, sampformat, framerate) = (1, 2, pa.SAMPLE_S16LE, 44100)
-#with pa.simple.open(
-#        direction = pa.STREAM_RECORD, format = sampformat, rate = framerate, channels = nchannels) as recorder:
-#    sense(1, 1, recorder)

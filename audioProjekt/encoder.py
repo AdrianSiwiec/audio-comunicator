@@ -1,5 +1,5 @@
-from bitarray import bitarray
 import binascii
+from bitarray import bitarray
 
 
 def encodeToBits(source, destination, message):
@@ -117,6 +117,14 @@ def decodeFromMessage(data):
     return data
 
 
+def decodeFromBitarray(data):
+    data = reverseNrzi(data, True)
+
+    if (data == None): return None
+
+    return reverse4b5b(data)
+
+
 def apply4b5b(data):
     msg = bitarray()
     for b in data.tobytes():
@@ -224,21 +232,24 @@ def encode(source, destination, data):
 
 def decode(data):
     data = decodeFromMessage(data)
-    if (data == None):
-        return None
+    if (data == None): return None
     return decodeFromBits(data.to01())
 
 
 def decodeInt(data, lastbit):
     data = reverseNrzi(data, lastbit)
+    if (data == None): return None
     data = reverse4b5b(data)
+    if (data == None): return None
 
     return int(data.to01(), 2)
 
 
 def decodeMsg(data, lastbit):
     data = reverseNrzi(data, lastbit)
+    if (data == None): return None
     data = reverse4b5b(data)
+    if (data == None): return None
 
     return data.tobytes().decode()
 
