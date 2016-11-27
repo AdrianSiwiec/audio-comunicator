@@ -14,7 +14,7 @@ batchSize = 100
 
 
 def playBitarray(array, f0, f1, bitTime):
-    samples0 = getSamples(f0, bitTime)          #Can do better bu don't care
+    samples0 = getSamples(f0, bitTime)
     samples1 = getSamples(f1, bitTime)
 
     with pa.simple.open(

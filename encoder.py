@@ -3,17 +3,11 @@ from bitarray import bitarray
 
 
 def encodeToBits(source, destination, message):
-    #    print("from: " + str(source) + ", to: " + str(destination) + ":" + message + ";")
     msg = bitarray()
     bDest = getBitarrayFromInt(destination, 6)
     bSrc = getBitarrayFromInt(source, 6)
     bLen = getBitarrayFromInt(len(message), 2)
     bMsg = getBitarrayFromString(message)
-
-    #    print("from: " + str(bSrc))
-    #    print("to: " + str(bDest))
-    #    print("len: " + str(bLen))
-    #    print("msg: " + str(bMsg))
 
     msg.extend(bDest)
     msg.extend(bSrc)
@@ -23,6 +17,31 @@ def encodeToBits(source, destination, message):
     msg.extend(getBitarrayFromInt(abs(getCrc(msg.tobytes())), 4))
 
     return msg
+
+def decodeInt(data, lastbit):
+    data = reverseNrzi(data, lastbit)
+    if (data == None): return None
+    data = reverse4b5b(data)
+    if (data == None): return None
+
+    return int(data.to01(), 2)
+
+
+def decodeMsg(data, lastbit):
+    data = reverseNrzi(data, lastbit)
+    if (data == None): return None
+    data = reverse4b5b(data)
+    if (data == None): return None
+
+    return data.tobytes().decode()
+
+def decodeFromBitarray(data):
+    data = reverseNrzi(data, True)
+
+    if (data == None): return None
+
+    return reverse4b5b(data)
+
 
 
 def decodeFromBits(message):
@@ -116,13 +135,6 @@ def decodeFromMessage(data):
 
     return data
 
-
-def decodeFromBitarray(data):
-    data = reverseNrzi(data, True)
-
-    if (data == None): return None
-
-    return reverse4b5b(data)
 
 
 def apply4b5b(data):
@@ -264,16 +276,3 @@ def getPreamble():
 
 def encodeWithoutPreamble(source, destination, data):
     return encode(source, destination, data)[64:]
-
-#import sys
-#
-#for line in sys.stdin.readlines():
-#    line = line[:-1]
-#    s = line.split(" ", 3)
-#    if (s[0] == "E"):
-#        print(encode(int(s[1]), int(s[2]), s[3]).to01())
-#    else:
-#        if( len(s) > 1 ):
-#            decoded = decode(s[1])
-#            if (decoded != None):
-#                print(str(decoded["src"]) + " " + str(decoded["dest"]) + " " + decoded["msg"])

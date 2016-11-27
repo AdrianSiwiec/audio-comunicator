@@ -6,7 +6,9 @@ Sender receives 7 arguments: number of bits per second of transmission, frequenc
 
 Example: "python2 sender.py 5 440 880 1 2 abc def" sends message from 2 to 1, 5 bits per second. The message is "abc def"
   
-Receiver takes 3 arguments: number of bits per second of transmission, frequency to represent 0 and frequency to represent 1
+Receiver takes 3 arguments: number of bits per second of transmission, frequency to represent 0 and frequency to represent 1.
+
+When there is unexpected end of message throws Exception.
 
 Example: "python2 recv.py 5 440 880". It writes to output recipient's and sender's id and message and whether crc32 check was positive.
 

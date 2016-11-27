@@ -1,11 +1,10 @@
-from encoder import decodeInt, decodeMsg, decodeFromBitarray
 import pulseaudio as pa
 import numpy
-
 from bitarray import bitarray
 
-_debug = False
+from encoder import decodeInt, decodeMsg, decodeFromBitarray
 
+_debug = False
 
 def receive(f0, f1, bitsPerSecond):
     if _debug:
@@ -17,11 +16,11 @@ def receive(f0, f1, bitsPerSecond):
 
     (nchannels, sampformat, framerate) = (1, pa.SAMPLE_S16LE, 44100)
     samplesPerBit = framerate / bitsPerSecond
+    
     if _debug: print(str(samplesPerBit))
 
     with pa.simple.open(
             direction = pa.STREAM_RECORD, format = sampformat, rate = framerate, channels = nchannels) as recorder:
-
         try:
             while (True):
                 prevGuesses = list(guesses)
@@ -153,9 +152,6 @@ def sense(samplesPerBit, noiseRatio, recorder, _debug):
         return (0, 0)
 
     (stronger, weaker) = (f0, f1) if f0 > f1 else (f1, f0)
-
-    #if _debug: print("Ratio: " + str(stronger / weaker))
-    #if _debug: print(str((freq0 if f0 > f1 else freq1, stronger / weaker)))
 
     return (freq0 if f0 > f1 else freq1, stronger / weaker)
 
