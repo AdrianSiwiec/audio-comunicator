@@ -1,4 +1,5 @@
 It's a simple sender-receiver tool, which transmits text messages via sound. It uses NRZI and 4B5B coding with crc32 error checking.
+It's written in python2
 
 Usage:
 
@@ -8,7 +9,7 @@ Example: "python2 sender.py 5 440 880 1 2 abc def" sends message from 2 to 1, 5 
   
 Receiver takes 3 arguments: number of bits per second of transmission, frequency to represent 0 and frequency to represent 1.
 
-When there is unexpected end of message throws Exception.
+When there is unexpected end of message or message is corrupted it prints "Message Corrupted"
 
 Example: "python2 recv.py 5 440 880". It writes to output recipient's and sender's id and message and whether crc32 check was positive.
 

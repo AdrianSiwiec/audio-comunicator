@@ -1,8 +1,48 @@
 import binascii
 from bitarray import bitarray
 
+#Functions at the top are higher-level and use functions at the bottom
 
-def encodeToBits(source, destination, message):
+
+def encode(source, destination, data):
+    return encodeToMessage(encodeToBits(source, destination, data))
+
+
+def encodeToMessage(data):  #Takes bitarray applies 4b5b, NRZI and adds preamble
+    msg = bitarray()
+    for i in range(7):
+        msg.extend(bitarray("10101010"))
+    msg.extend(bitarray("10101011"))
+    lastbit = True
+
+    data = apply4b5b(data)
+    data = applyNRZI(data, lastbit)
+
+    msg.extend(data)
+    return msg
+
+
+def apply4b5b(data):
+    msg = bitarray()
+    for b in data.tobytes():
+        ext = convertByteToBitarray(ord(b))
+        msg.extend(ext)
+
+    return msg
+
+
+def applyNRZI(data, lastbit):
+    for i in range(data.length()):
+        if (data[i]):
+            data[i] = not lastbit
+        else:
+            data[i] = lastbit
+        lastbit = data[i]
+
+    return data
+
+
+def encodeToBits(source, destination, message):  #Takes args and returns bitarray
     msg = bitarray()
     bDest = getBitarrayFromInt(destination, 6)
     bSrc = getBitarrayFromInt(source, 6)
@@ -18,6 +58,7 @@ def encodeToBits(source, destination, message):
 
     return msg
 
+
 def getBitarrayFromInt(data, length):
     return bitarray(bin(data)[2:].zfill(8 * length))
 
@@ -28,30 +69,6 @@ def getBitarrayFromString(data):
         ret.extend(getBitarrayFromInt(ord(c), 1))
 
     return ret
-
-
-def encodeToMessage(data):
-    msg = bitarray()
-    for i in range(7):
-        msg.extend(bitarray("10101010"))
-    msg.extend(bitarray("10101011"))
-    lastbit = True
-
-    data = apply4b5b(data)
-
-    data = nrzi(data, lastbit)
-
-    msg.extend(data)
-
-    return msg
-
-def apply4b5b(data):
-    msg = bitarray()
-    for b in data.tobytes():
-        ext = convertByteToBitarray(ord(b))
-        msg.extend(ext)
-
-    return msg
 
 
 def convertByteToBitarray(data):
@@ -68,18 +85,6 @@ def convertByteToBitarray(data):
     ret.extend(b2)
 
     return ret
-
-
-def nrzi(data, lastbit):
-    for i in range(data.length()):
-        if (data[i]):
-            data[i] = not lastbit
-        else:
-            data[i] = lastbit
-        lastbit = data[i]
-
-    return data
-
 
 
 fourBfiveB = {
@@ -104,18 +109,3 @@ fourBfiveB = {
 
 def getCrc(data):
     return binascii.crc32(data) & 0xffffffff
-
-
-def encode(source, destination, data):
-    return encodeToMessage(encodeToBits(source, destination, data))
-
-def getPreamble():
-    msg = bitarray()
-    for i in range(7):
-        msg.extend(bitarray("10101010"))
-    msg.extend(bitarray("10101011"))
-    return msg
-
-
-def encodeWithoutPreamble(source, destination, data):
-    return encode(source, destination, data)[64:]
