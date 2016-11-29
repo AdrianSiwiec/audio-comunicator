@@ -18,78 +18,6 @@ def encodeToBits(source, destination, message):
 
     return msg
 
-def decodeInt(data, lastbit):
-    data = reverseNrzi(data, lastbit)
-    if (data == None): return None
-    data = reverse4b5b(data)
-    if (data == None): return None
-
-    return int(data.to01(), 2)
-
-
-def decodeMsg(data, lastbit):
-    data = reverseNrzi(data, lastbit)
-    if (data == None): return None
-    data = reverse4b5b(data)
-    if (data == None): return None
-
-    return data.tobytes().decode()
-
-def decodeFromBitarray(data):
-    data = reverseNrzi(data, True)
-
-    if (data == None): return None
-
-    return reverse4b5b(data)
-
-
-
-def decodeFromBits(message):
-
-    if (len(message) < 16 * 8):
-        return None
-
-    sDest = message[:6 * 8]
-    sSrc = message[6 * 8:12 * 8]
-    sLen = message[12 * 8:14 * 8]
-    sMsg = message[14 * 8:-4 * 8]
-    sCrc = message[-4 * 8:]
-
-    sContent = sDest + sSrc + sLen + sMsg
-    content = bitarray()
-    for c in sContent:
-        if (c == '0'):
-            content.append(False)
-        else:
-            content.append(True)
-
-    contentCrc = getCrc(content.tobytes())
-    messageCrc = int(sCrc, 2)
-
-    if (contentCrc != messageCrc):
-        #        print("crc dont match")
-        return None
-
-    dest = int(sDest, 2)
-    src = int(sSrc, 2)
-    length = int(sLen, 2)
-
-    if (length * 8 != len(sMsg)):
-        print("length is incorrect")
-        return None
-
-    bMsg = bitarray()
-    for c in sMsg:
-        if (c == '0'):
-            bMsg.append(False)
-        else:
-            bMsg.append(True)
-
-    msg = bMsg.tobytes().decode()
-
-    return ({"dest": dest, "src": src, "msg": msg})
-
-
 def getBitarrayFromInt(data, length):
     return bitarray(bin(data)[2:].zfill(8 * length))
 
@@ -117,44 +45,11 @@ def encodeToMessage(data):
 
     return msg
 
-
-def decodeFromMessage(data):
-    if (data < 65):
-        return None
-    data = data[64:]
-
-    msg = bitarray()
-    for i in data:
-        msg.append(i == '1')
-
-    data = msg
-
-    data = reverseNrzi(data, True)
-
-    data = reverse4b5b(data)
-
-    return data
-
-
-
 def apply4b5b(data):
     msg = bitarray()
     for b in data.tobytes():
         ext = convertByteToBitarray(ord(b))
         msg.extend(ext)
-
-    return msg
-
-
-def reverse4b5b(data):
-    msg = bitarray()
-    data = data.to01()
-    for s in [data[i:i + 5] for i in range(0, len(data), 5)]:
-        ext = rev4B5B.get(s)
-        if (ext != None):
-            msg.extend(rev4B5B.get(s))
-        else:
-            return None
 
     return msg
 
@@ -186,14 +81,6 @@ def nrzi(data, lastbit):
     return data
 
 
-def reverseNrzi(data, lastbit):
-    for i in range(data.length()):
-        nju = data[i]
-        data[i] = not (data[i] == lastbit)
-        lastbit = nju
-
-    return data
-
 
 fourBfiveB = {
     '0000': '11110',
@@ -214,25 +101,6 @@ fourBfiveB = {
     '1111': '11101'
 }
 
-rev4B5B = {
-    '11110': '0000',
-    '01001': '0001',
-    '10100': '0010',
-    '10101': '0011',
-    '01010': '0100',
-    '01011': '0101',
-    '01110': '0110',
-    '01111': '0111',
-    '10010': '1000',
-    '10011': '1001',
-    '10110': '1010',
-    '10111': '1011',
-    '11010': '1100',
-    '11011': '1101',
-    '11100': '1110',
-    '11101': '1111'
-}
-
 
 def getCrc(data):
     return binascii.crc32(data) & 0xffffffff
@@ -240,31 +108,6 @@ def getCrc(data):
 
 def encode(source, destination, data):
     return encodeToMessage(encodeToBits(source, destination, data))
-
-
-def decode(data):
-    data = decodeFromMessage(data)
-    if (data == None): return None
-    return decodeFromBits(data.to01())
-
-
-def decodeInt(data, lastbit):
-    data = reverseNrzi(data, lastbit)
-    if (data == None): return None
-    data = reverse4b5b(data)
-    if (data == None): return None
-
-    return int(data.to01(), 2)
-
-
-def decodeMsg(data, lastbit):
-    data = reverseNrzi(data, lastbit)
-    if (data == None): return None
-    data = reverse4b5b(data)
-    if (data == None): return None
-
-    return data.tobytes().decode()
-
 
 def getPreamble():
     msg = bitarray()

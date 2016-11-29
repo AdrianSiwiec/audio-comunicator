@@ -2,7 +2,7 @@ import pulseaudio as pa
 import numpy
 from bitarray import bitarray
 
-from encoder import decodeInt, decodeMsg, decodeFromBitarray
+from decoder import decodeInt, decodeString, decodeFromBitarray
 
 _debug = False
 
@@ -83,14 +83,14 @@ def receive(f0, f1, bitsPerSecond):
         msg = listenForBytes(ln, samplesPerBit, f0, f1, recorder)
         wholeMessage.extend(msg)
         lastbitMsg = msg[-1]
-        msg = decodeMsg(msg, lastbitLn)
+        msg = decodeString(msg, lastbitLn)
         print("MSG: " + msg)
 
         crc = listenForBytes(4, samplesPerBit, f0, f1, recorder)
         wholeMessage.extend(crc)
 
         decodedMessage = decodeFromBitarray(wholeMessage)
-        if(decodeMsg == None):
+        if(decodedMessage == None):
             print("Message Corrupted!")
         else:
             print("CRC OK")
